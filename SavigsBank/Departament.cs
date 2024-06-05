@@ -1,10 +1,9 @@
-﻿using Google.Protobuf;
-using MySql.Data.MySqlClient;
+﻿using MySql.Data.MySqlClient;
 
 
 namespace SavigsBank;
 
-public class Department
+public class Departament
 {
     private string _departmentName;
     public string DepartmentName => _departmentName;
@@ -14,7 +13,7 @@ public class Department
     
     private List<Account> accounts;
 
-    public Department(string departmentName, double interestRatePerMonth, string connectionStr)
+    public Departament(string departmentName, double interestRatePerMonth, string connectionStr)
     {
         _departmentName = departmentName;
         _interestRatePerMonth = interestRatePerMonth;
@@ -23,16 +22,11 @@ public class Department
         // add timer
     }
 
-    ~Department()
+    ~Departament()
     {
         _DBConnection.Close();
     }
-
-    public void OpenAccount(int id, string ownerName, string ownerSurname, string ownerMiddleName, int balance)
-    {
-        accounts.Add(new Account(id, ownerName, ownerSurname,
-            ownerMiddleName, balance));
-    }
+    
 
     private MySqlConnection EstablishDBConnection(string connStr)
     {
@@ -64,10 +58,28 @@ public class Department
             throw;
         }
     }
+
+    public void DisplayTable(string table)
+    {
+        var rdr = dbQuery($"select * from {table}");
+        while (rdr.Read())
+        {
+            for (int i = 0; i < rdr.FieldCount; i++)
+            {
+                Console.Write($"rdr[i], ");
+            }
+            Console.WriteLine();
+        }
+    }
     
-    
-    
-    
-    
-    
+    public void OpenAccount(string ownerName, string ownerSurname, string ownerMiddleName)
+    {
+        var random = new Random();
+        int id = random.Next(10000, 99999);
+        
+        accounts.Add(new Account(id, ownerName, ownerSurname, ownerMiddleName));
+
+        dbQuery("insert into accounts" +
+                $"values(\"{id}\", \"{ownerName}\", \"{ownerSurname}\", \"{ownerMiddleName}\", 0);");
+    }
 }

@@ -15,13 +15,13 @@ public class Account
     private Deposit? _deposit;
     public Deposit? Deposit => _deposit;
 
-    public Account(int id, string ownerName, string ownerSurname, string ownerMiddleName, int balance)
+    public Account(int id, string ownerName, string ownerSurname, string ownerMiddleName)
     {
         _ID = id;
         _ownerName = ownerName;
         _ownerSurname = ownerSurname;
         _ownerMiddleName = ownerMiddleName;
-        _balance = balance;
+        _balance = 0;
         _deposit = null;
     }
 
