@@ -5,17 +5,17 @@ namespace SavigsBank;
 
 public class Departament
 {
-    private string _departmentName;
-    public string DepartmentName => _departmentName;
+    private string _departamentName;
+    public string DepartamentName => _departamentName;
     private double _interestRatePerMonth; 
     public double InterestRatePerMonth => _interestRatePerMonth;
     private MySqlConnection _DBConnection;
     
     private List<Account> accounts;
 
-    public Departament(string departmentName, double interestRatePerMonth, string connectionStr)
+    public Departament(string departamentName, double interestRatePerMonth, string connectionStr)
     {
-        _departmentName = departmentName;
+        _departamentName = departamentName;
         _interestRatePerMonth = interestRatePerMonth;
         accounts = new List<Account>();
         _DBConnection = EstablishDBConnection(connectionStr);
@@ -27,7 +27,6 @@ public class Departament
     {
         _DBConnection.Close();
     }
-    
 
     private MySqlConnection EstablishDBConnection(string connStr)
     {
@@ -78,7 +77,6 @@ public class Departament
                         rdr.GetDouble(6), rdr.GetDateTime(7), rdr.GetDateTime(8)));
                 }
             }
-            
             rdr.Close();
 
         }
@@ -91,7 +89,6 @@ public class Departament
 
     public void PrintAccounts()
     {
-        Console.WriteLine("im here!");
         foreach (var item in accounts)
         {
             Console.WriteLine($"{item.ID}, {item.OwnerName}, {item.OwnerSurname}, " +
@@ -110,8 +107,8 @@ public class Departament
         int id = random.Next(10000, 99999);
         
         accounts.Add(new Account(id, ownerName, ownerSurname, ownerMiddleName, 0));
-        string query = "insert into accounts" +
-            $" values(\"{id}\", \"{ownerName}\", \"{ownerSurname}\", \"{ownerMiddleName}\", 0, null)";
+        string query = "insert into accounts " +
+            $"values(\"{id}\", \"{ownerName}\", \"{ownerSurname}\", \"{ownerMiddleName}\", 0, null)";
         var rdr = DBQuery(query);
         rdr.Close();
     }
@@ -123,8 +120,11 @@ public class Departament
         double interest = _interestRatePerMonth * term;
         var dep = new Deposit(id, interest, DateTime.Today, DateTime.Today.AddMonths(term));
         accounts.Find(x => x.ID == accountID).AssignDeposit(dep);
-        var rdr = this.DBQuery("insert into deposits" +
-                     $" values(id, interest, \"{DateTime.Today.ToString("d")}\", \"{DateTime.Today.AddMonths(term).ToString("d")}\")");
+        var rdr = this.DBQuery("insert into deposits " +
+                     $"values({id}, {interest}, \"{DateTime.Today.ToString("o")}\", \"{DateTime.Today.AddMonths(term).ToString("o")}\")");
+        rdr.Close();
+
+        rdr = this.DBQuery($"update accounts set deposit_id = {id} where account_id = {accountID}");
         rdr.Close();
     }
 }

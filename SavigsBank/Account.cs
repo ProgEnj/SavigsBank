@@ -1,5 +1,6 @@
 ﻿namespace SavigsBank;
 
+
 public class Account
 {
     private int _ID;
@@ -10,8 +11,8 @@ public class Account
     public string OwnerSurname => _ownerName;
     private string _ownerMiddleName; 
     public string OwnerMiddleName => _ownerMiddleName;
-    private int _balance;
-    public int Balance => _balance;
+    private double _balance;
+    public double Balance => _balance;
     private Deposit? _deposit;
     public Deposit? Deposit => _deposit;
 
@@ -29,7 +30,4 @@ public class Account
     {
         this._deposit = dep;
     }
-    
-    
-    
 }
