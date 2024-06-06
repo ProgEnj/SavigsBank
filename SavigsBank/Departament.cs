@@ -58,6 +58,8 @@ public class Departament
             throw;
         }
     }
+    
+    private void 
 
     public void DisplayTable(string table)
     {
@@ -79,9 +81,21 @@ public class Departament
         int id = random.Next(10000, 99999);
         
         accounts.Add(new Account(id, ownerName, ownerSurname, ownerMiddleName));
-        string amogus = "insert into accounts" +
+        string query = "insert into accounts" +
             $" values(\"{id}\", \"{ownerName}\", \"{ownerSurname}\", \"{ownerMiddleName}\", 0, null)";
-        var rdr = dbQuery(amogus);
+        var rdr = dbQuery(query);
+        rdr.Close();
+    }
+
+    public void OpenDeposit(int accountID, int term, int amount)
+    {
+        var rnd = new Random();
+        int id = rnd.Next(10000, 99999);
+        double interest = _interestRatePerMonth * term;
+        var dep = new Deposit(id, interest, DateTime.Today, DateTime.Today.AddMonths(term));
+        accounts.Find(x => x.ID == accountID).AssignDeposit(dep);
+        var rdr = this.dbQuery("insert into deposits" +
+                     $" values(id, interest, \"{DateTime.Today.ToString("d")}\", \"{DateTime.Today.AddMonths(term).ToString("d")}\")");
         rdr.Close();
     }
 }
