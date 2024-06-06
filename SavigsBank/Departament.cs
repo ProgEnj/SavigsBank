@@ -19,6 +19,7 @@ public class Departament
         _interestRatePerMonth = interestRatePerMonth;
         accounts = new List<Account>();
         _DBConnection = EstablishDBConnection(connectionStr);
+        this.LoadFromDB();
         // add timer
     }
 
@@ -44,7 +45,7 @@ public class Departament
         return conn;
     }
 
-    private MySqlDataReader dbQuery(string sqlQuery)
+    private MySqlDataReader DBQuery(string sqlQuery)
     {
         try
         {
@@ -58,32 +59,60 @@ public class Departament
             throw;
         }
     }
-    
-    private void 
 
-    public void DisplayTable(string table)
+    private void LoadFromDB()
     {
-        var rdr = dbQuery($"select * from {table}");
-        while (rdr.Read())
+        try
         {
-            for (int i = 0; i < rdr.FieldCount; i++)
+            var depositIDs = new List<int>();
+            var rdr = DBQuery("select account_id, first_name, last_name, middle_name, balance, accounts.deposit_id, interest, opened, ending " +
+                              "from accounts left join deposits " +
+                              "on accounts.deposit_id = deposits.deposit_id");
+            while (rdr.Read())
             {
-                Console.Write($"{rdr[i]}, ");
+                var account = new Account(rdr.GetInt32(0), rdr.GetString(1), rdr.GetString(2), rdr.GetString(3), rdr.GetInt32(4));
+                accounts.Add(account);
+                if (!rdr.IsDBNull(5))
+                {
+                    account.AssignDeposit(new Deposit(rdr.GetInt32(5), 
+                        rdr.GetDouble(6), rdr.GetDateTime(7), rdr.GetDateTime(8)));
+                }
             }
-            Console.WriteLine();
+            
+            rdr.Close();
+
         }
-        rdr.Close();
+        catch (MySqlException e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
     }
-    
+
+    public void PrintAccounts()
+    {
+        Console.WriteLine("im here!");
+        foreach (var item in accounts)
+        {
+            Console.WriteLine($"{item.ID}, {item.OwnerName}, {item.OwnerSurname}, " +
+                              $"{item.OwnerMiddleName}, {item.Balance}");
+            if (item.Deposit != null)
+            {
+                var dep = item.Deposit;
+                Console.WriteLine("\t" + $"{dep.ID}, {dep.Opened.Date}, {dep.Ending.Date}");
+            }
+        }
+    }
+
     public void OpenAccount(string ownerName, string ownerSurname, string ownerMiddleName)
     {
         var random = new Random();
         int id = random.Next(10000, 99999);
         
-        accounts.Add(new Account(id, ownerName, ownerSurname, ownerMiddleName));
+        accounts.Add(new Account(id, ownerName, ownerSurname, ownerMiddleName, 0));
         string query = "insert into accounts" +
             $" values(\"{id}\", \"{ownerName}\", \"{ownerSurname}\", \"{ownerMiddleName}\", 0, null)";
-        var rdr = dbQuery(query);
+        var rdr = DBQuery(query);
         rdr.Close();
     }
 
@@ -94,7 +123,7 @@ public class Departament
         double interest = _interestRatePerMonth * term;
         var dep = new Deposit(id, interest, DateTime.Today, DateTime.Today.AddMonths(term));
         accounts.Find(x => x.ID == accountID).AssignDeposit(dep);
-        var rdr = this.dbQuery("insert into deposits" +
+        var rdr = this.DBQuery("insert into deposits" +
                      $" values(id, interest, \"{DateTime.Today.ToString("d")}\", \"{DateTime.Today.AddMonths(term).ToString("d")}\")");
         rdr.Close();
     }
