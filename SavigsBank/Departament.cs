@@ -1,7 +1,6 @@
 ﻿using MySql.Data.MySqlClient;
-
-
 namespace SavigsBank;
+
 
 public class Departament
 {
@@ -26,6 +25,16 @@ public class Departament
     ~Departament()
     {
         _DBConnection.Close();
+    }
+
+    private void LogAction(int accountID, string operationType, double balance_affection, string description)
+    {
+        var random = new Random();
+        int id = random.Next(10000, 99999);
+        var rdr = DBQuery("insert into actions_history " +
+                          $"values({id}, {accountID}, \"{operationType}\", {balance_affection}, " +
+                          $"\"{DateTime.Now.ToString("o")}\", \"{description}\");");
+        rdr.Close();
     }
 
     private MySqlConnection EstablishDBConnection(string connStr)
@@ -111,6 +120,8 @@ public class Departament
             $"values(\"{id}\", \"{ownerName}\", \"{ownerSurname}\", \"{ownerMiddleName}\", 0, null)";
         var rdr = DBQuery(query);
         rdr.Close();
+        
+        this.LogAction(id, "Account open", 0, "Opened a new account");
     }
 
     public void OpenDeposit(int accountID, int term, int amount)
@@ -126,5 +137,7 @@ public class Departament
 
         rdr = this.DBQuery($"update accounts set deposit_id = {id} where account_id = {accountID}");
         rdr.Close();
+        
+        this.LogAction(accountID, "Deposit open", 0, "Opened a new deposit");
     }
 }
