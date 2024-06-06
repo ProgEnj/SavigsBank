@@ -66,10 +66,11 @@ public class Departament
         {
             for (int i = 0; i < rdr.FieldCount; i++)
             {
-                Console.Write($"rdr[i], ");
+                Console.Write($"{rdr[i]}, ");
             }
             Console.WriteLine();
         }
+        rdr.Close();
     }
     
     public void OpenAccount(string ownerName, string ownerSurname, string ownerMiddleName)
@@ -78,8 +79,9 @@ public class Departament
         int id = random.Next(10000, 99999);
         
         accounts.Add(new Account(id, ownerName, ownerSurname, ownerMiddleName));
-
-        dbQuery("insert into accounts" +
-                $"values(\"{id}\", \"{ownerName}\", \"{ownerSurname}\", \"{ownerMiddleName}\", 0);");
+        string amogus = "insert into accounts" +
+            $" values(\"{id}\", \"{ownerName}\", \"{ownerSurname}\", \"{ownerMiddleName}\", 0, null)";
+        var rdr = dbQuery(amogus);
+        rdr.Close();
     }
 }
