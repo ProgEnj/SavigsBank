@@ -11,13 +11,13 @@ public class Departament
     public double InterestRatePerMonth => _interestRatePerMonth;
     private MySqlConnection _DBConnection;
     
-    private List<Account> accounts;
+    private List<AccountBasic> accounts;
 
     public Departament(string departamentName, double interestRatePerMonth, string connectionStr)
     {
         _departamentName = departamentName;
         _interestRatePerMonth = interestRatePerMonth;
-        accounts = new List<Account>();
+        accounts = new List<AccountBasic>();
         _DBConnection = EstablishDBConnection(connectionStr);
         this.LoadFromDB();
         // add timer
@@ -69,7 +69,7 @@ public class Departament
                               "on accounts.deposit_id = deposits.deposit_id");
             while (rdr.Read())
             {
-                var account = new Account(rdr.GetInt32(0), rdr.GetString(1), rdr.GetString(2), rdr.GetString(3), rdr.GetInt32(4));
+                var account = new AccountBasic(rdr.GetInt32(0), rdr.GetString(1), rdr.GetString(2), rdr.GetString(3), rdr.GetInt32(4));
                 accounts.Add(account);
                 if (!rdr.IsDBNull(5))
                 {
@@ -106,7 +106,7 @@ public class Departament
         var random = new Random();
         int id = random.Next(10000, 99999);
         
-        accounts.Add(new Account(id, ownerName, ownerSurname, ownerMiddleName, 0));
+        accounts.Add(new AccountBasic(id, ownerName, ownerSurname, ownerMiddleName, 0));
         string query = "insert into accounts " +
             $"values(\"{id}\", \"{ownerName}\", \"{ownerSurname}\", \"{ownerMiddleName}\", 0, null)";
         var rdr = DBQuery(query);
