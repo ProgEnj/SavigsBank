@@ -5,7 +5,6 @@ string connStr = "server=localhost;user=root;database=savings_bank;port=3306;pas
 
 var a = new Departament("aboba", 1.2, connStr);
 
-Console.ReadLine();
 a.PrintAccounts();
 
         

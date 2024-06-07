@@ -21,4 +21,11 @@ public class AccountBasic : AccountBase
     {
         this._deposit = dep;
     }
+
+    public List<string> GetAsStringList()
+    {
+        var list = new List<string>(){this.ID.ToString(), this.OwnerName, this.OwnerSurname, 
+            this.OwnerMiddleName, this.Balance.ToString(), this.Deposit == null ? "No" : "Yes"};
+        return list;
+    }
 }
