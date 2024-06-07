@@ -11,7 +11,11 @@ public abstract class AccountBase
     private string _ownerMiddleName; 
     public string OwnerMiddleName => _ownerMiddleName;
     private double _balance;
-    public double Balance => _balance;
+    public double Balance
+    {
+        get => _balance;
+        set => _balance = value;
+    }
     
     protected AccountBase(int id, string ownerName, string ownerSurname, string ownerMiddleName, double balance)
     {

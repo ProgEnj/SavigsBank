@@ -9,6 +9,8 @@ public class Departament
     private double _interestRatePerMonth; 
     public double InterestRatePerMonth => _interestRatePerMonth;
     private MySqlConnection _DBConnection;
+
+    private Timer timer;
     
     private List<AccountBasic> accounts;
 
@@ -19,12 +21,47 @@ public class Departament
         accounts = new List<AccountBasic>();
         _DBConnection = EstablishDBConnection(connectionStr);
         this.LoadFromDB();
-        // add timer
+
+        timer = new Timer(this.CheckDeposits, null, 0, 86_400_000);
     }
 
     ~Departament()
     {
+        timer.Dispose();
         _DBConnection.Close();
+    }
+
+    public void CheckDeposits(object? stateInfo)
+    {
+        var today = DateTime.Today;
+        foreach (var item in accounts)
+        {
+            var dep = item.Deposit;
+            if (item.Deposit != null)
+            {
+                if (today.CompareTo(dep.Ending) == 0)
+                {
+                    this.CloseDeposit(item);
+                }
+                else if (today.CompareTo(dep.Ending) < 0 &&
+                    dep.Ending.Subtract(today).Days % 30 == 0)
+                {
+                    double balanceAdd = item.Balance * dep.Interest;
+                    item.Balance += balanceAdd;
+                    try
+                    {
+                        var rdr = DBQuery($"update accounts set balance = balance + {balanceAdd} " +
+                                          $"where account_id = {item.ID};");
+                        rdr.Close();
+                    }
+                    catch (MySqlException e)
+                    {
+                        Console.WriteLine(e);
+                        throw;
+                    }
+                }
+            }
+        }
     }
 
     private void LogAction(int accountID, string operationType, double balance_affection, string description)
@@ -139,5 +176,15 @@ public class Departament
         rdr.Close();
         
         this.LogAction(accountID, "Deposit open", 0, "Opened a new deposit");
+    }
+
+    public void CloseDeposit(AccountBasic account)
+    {
+        var rdr = this.DBQuery($"update accounts set deposit_id = null where account_id = {account.ID}; " +
+                     $"delete from deposits where deposit_id = {account.Deposit.ID};");
+        account.Deposit = null;
+        rdr.Close();
+        
+        this.LogAction(account.ID, "Deposit close", 0, "Closed account deposit");
     }
 }
