@@ -1,4 +1,7 @@
-﻿using MySql.Data.MySqlClient;
+﻿using System.Reflection;
+using MySql.Data.MySqlClient;
+using Mysqlx.Datatypes;
+
 namespace SavigsBank;
 
 
@@ -30,50 +33,7 @@ public class Departament
         timer.Dispose();
         _DBConnection.Close();
     }
-
-    public void CheckDeposits(object? stateInfo)
-    {
-        var today = DateTime.Today;
-        foreach (var item in accounts)
-        {
-            var dep = item.Deposit;
-            if (item.Deposit != null)
-            {
-                if (today.CompareTo(dep.Ending) == 0)
-                {
-                    this.CloseDeposit(item);
-                }
-                else if (today.CompareTo(dep.Ending) < 0 &&
-                    dep.Ending.Subtract(today).Days % 30 == 0)
-                {
-                    double balanceAdd = item.Balance * dep.Interest;
-                    item.Balance += balanceAdd;
-                    try
-                    {
-                        var rdr = DBQuery($"update accounts set balance = balance + {balanceAdd} " +
-                                          $"where account_id = {item.ID};");
-                        rdr.Close();
-                    }
-                    catch (MySqlException e)
-                    {
-                        Console.WriteLine(e);
-                        throw;
-                    }
-                }
-            }
-        }
-    }
-
-    private void LogAction(int accountID, string operationType, double balance_affection, string description)
-    {
-        var random = new Random();
-        int id = random.Next(10000, 99999);
-        var rdr = DBQuery("insert into actions_history " +
-                          $"values({id}, {accountID}, \"{operationType}\", {balance_affection}, " +
-                          $"\"{DateTime.Now.ToString("o")}\", \"{description}\");");
-        rdr.Close();
-    }
-
+    
     private MySqlConnection EstablishDBConnection(string connStr)
     {
         var conn = new MySqlConnection(connStr);
@@ -132,6 +92,52 @@ public class Departament
             throw;
         }
     }
+    
+    private void LogAction(int accountID, string operationType, double balance_affection, string description)
+    {
+        var random = new Random();
+        int id = random.Next(10000, 99999);
+        var rdr = DBQuery("insert into actions_history " +
+                          $"values({id}, {accountID}, \"{operationType}\", {balance_affection}, " +
+                          $"\"{DateTime.Now.ToString("o")}\", \"{description}\");");
+        rdr.Close();
+    }
+
+    public void CheckDeposits(object? stateInfo)
+    {
+        var today = DateTime.Today;
+        foreach (var item in accounts)
+        {
+            var dep = item.Deposit;
+            if (item.Deposit != null)
+            {
+                if (today.CompareTo(dep.Ending) == 0)
+                {
+                    this.CloseDeposit(item);
+                }
+                else if (today.CompareTo(dep.Ending) < 0 &&
+                    dep.Ending.Subtract(today).Days % 30 == 0)
+                {
+                    double balanceAdd = Math.Round(item.Balance * dep.Interest, 2);
+                    item.Balance += balanceAdd;
+                    try
+                    {
+                        var rdr = DBQuery($"update accounts set balance = balance + {balanceAdd} " +
+                                          $"where account_id = {item.ID};");
+                        rdr.Close();
+
+                        LogAction(item.ID, "Accrual", balanceAdd,  "Accrual of interest");
+                    }
+                    catch (MySqlException e)
+                    {
+                        Console.WriteLine(e);
+                        throw;
+                    }
+                }
+            }
+        }
+    }
+
 
     public void PrintAccounts()
     {
@@ -160,6 +166,20 @@ public class Departament
         
         this.LogAction(id, "Account open", 0, "Opened a new account");
     }
+    
+    public void CloseAccount(AccountBasic account)
+    {
+        var rdr = this.DBQuery($"delete from accounts where account_id = {account.ID};");
+        rdr.Close();
+        if (account.Deposit != null)
+        {
+            rdr = this.DBQuery($"delete from deposits where deposit_id = {account.Deposit.ID};");
+            account.Deposit = null;
+        }
+        accounts.Remove(account);
+        
+        this.LogAction(account.ID, "Account close", 0, "Closed account");
+    }
 
     public void OpenDeposit(int accountID, int term, int amount)
     {
@@ -187,4 +207,48 @@ public class Departament
         
         this.LogAction(account.ID, "Deposit close", 0, "Closed account deposit");
     }
+
+    public void AddFunds(int accountID, double amount)
+    {
+        var account = accounts.Find(x => x.ID == accountID);
+        account.Balance += Math.Round(amount, 2);
+        
+        var rdr = this.DBQuery($"update accounts set balance = balance + {Math.Round(amount, 2)} " +
+                               $"where account_id = {accountID}");
+        rdr.Close();
+
+        this.LogAction(accountID, "Add funds", amount, "added funds to account");
+    }
+    
+    public void WithdrawFunds(int accountID, double amount)
+    {
+        var account = accounts.Find(x => x.ID == accountID);
+        account.Balance -= Math.Round(amount, 2);
+        
+        var rdr = this.DBQuery($"update accounts set balance = balance - {Math.Round(amount, 2)} " +
+                               $"where account_id = {accountID}");
+        rdr.Close();
+
+        this.LogAction(accountID, "Add funds", (Math.Round(amount, 2)) * (-1), "withdraw funds from account");
+    }
+
+    public void TransferFunds(int accountIDFrom, int accountIDTo, double amount)
+    {
+        var roundedAmount = Math.Round(amount, 2);
+        
+        var accountFrom = accounts.Find(x => x.ID == accountIDFrom);
+        var accountTo = accounts.Find(x => x.ID == accountIDTo);
+
+        accountFrom.Balance -= Math.Round(roundedAmount, 2);
+        accountTo.Balance += Math.Round(roundedAmount, 2);
+
+        var rdr = this.DBQuery($"update accounts set balance = balance - {roundedAmount} " +
+                               $"where account_id = {accountIDFrom}; " +
+                               $"update accounts set balance = balance + {roundedAmount} " +
+                               $"where account_id = {accountTo};");
+        
+        this.LogAction(accountIDFrom, "Transfer funds", Math.Round(roundedAmount, 2) * (-1), "Transfered funds to another account");
+        this.LogAction(accountIDTo, "Transfer funds", Math.Round(roundedAmount, 2), "Transfered funds from another account");
+    }
+    
 }
