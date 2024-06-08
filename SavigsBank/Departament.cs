@@ -140,7 +140,6 @@ public class Departament
         }
     }
 
-
     public void PrintAccounts()
     {
         // Construct header
@@ -186,9 +185,61 @@ public class Departament
             Console.Write("\n" + rowSeparator + "\n");
             numbering++;
         }
+        Console.WriteLine();
+        Console.WriteLine();
     }
     
-    
+    public void PrintDeposits()
+    {
+        // Construct header
+        char separator = '|';
+        char horizontalSeparator = '-';
+        int maxLength = 15;
+        string[] header = new[] { "Id", "Interest", "Opened", "Ending"};
+        
+        string rowSeparator = "";
+        for (int i = 0; i < ((maxLength + 3) * 6) + 5; i++)
+        {
+            rowSeparator += horizontalSeparator;
+        }
+        
+        Console.Write("  n  ");
+
+        for (int i = 0; i < header.Length; i++)
+        {
+            Console.Write($" {header[i]}");
+            for (int j = 0; j < (maxLength - header[i].Length); j++)
+            {
+                Console.Write(" ");
+            }
+            Console.Write("  ");
+        }
+        Console.WriteLine();
+        Console.WriteLine(rowSeparator);
+
+        int numbering = 1;
+        foreach (var item in accounts)
+        {
+            if (item.Deposit != null)
+            {
+                Console.Write(separator + " " + numbering + " " + separator);
+                var list = item.GetAsStringList();
+                for (int i = 0; i < list.Count; i++)
+                {
+                    Console.Write($" {list[i]}");
+                    for (int j = 0; j < maxLength - list[i].Length; j++)
+                    {
+                        Console.Write(" ");
+                    }
+                    Console.Write(" " + separator);
+                }
+                Console.Write("\n" + rowSeparator + "\n");
+                numbering++;
+            }
+        }
+        Console.WriteLine();
+        Console.WriteLine();
+    }
 
     public void OpenAccount(string ownerName, string ownerSurname, string ownerMiddleName)
     {

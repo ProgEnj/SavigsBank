@@ -21,4 +21,10 @@ public class Deposit
         _opened = opened;
         _ending = ending;
     }
+
+    public List<string> GetAsStringList()
+    {
+        return new List<string>() {ID.ToString(), _interest.ToString(), 
+            _opened.ToString("o"),  _ending.ToString("o")};
+    }
 }
