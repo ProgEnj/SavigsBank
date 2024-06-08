@@ -8,8 +8,7 @@ var a = new Departament("aboba", 1.2, connStr);
 a.PrintAccounts();
 a.PrintDeposits();
 
-a.AccountReport(40355, DateTime.Today.AddDays(-2), DateTime.Today);
-
+a.AccountBalanceReport(40355, 10000000);
         
 
 

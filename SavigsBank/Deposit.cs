@@ -25,6 +25,6 @@ public class Deposit
     public List<string> GetAsStringList()
     {
         return new List<string>() {ID.ToString(), _interest.ToString(), 
-            _opened.Date.ToString("o"),  _ending.Date.ToString("o")};
+            DateOnly.FromDateTime(_opened).ToString("o"),  DateOnly.FromDateTime(_ending).ToString("o")};
     }
 }

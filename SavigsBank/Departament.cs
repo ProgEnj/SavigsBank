@@ -147,7 +147,7 @@ public class Departament
     public void PrintHeader(List<string> header)
     {
         rowSeparator = "";
-        for (int i = 0; i < ((maxLength + 3) * 6) + 5; i++)
+        for (int i = 0; i < ((maxLength + 3) * header.Count) + 5; i++)
         {
             rowSeparator += horizontalSeparator;
         }
@@ -365,5 +365,25 @@ public class Departament
         Console.WriteLine();
         maxLength = 15;
     }
+    
+    public void AccountBalanceReport(int accountID, double balance)
+    {
+        maxLength = 20;
+        var rdr = this.DBQuery($"select * from actions_history where accountID = {accountID} and " +
+                               $"balance_affection < {balance};");
+        
+        PrintHeader(new List<string>(){"ActionID", "AccountID", "Type", "Balance changes", "Date", "Description"});
+        int numbering = 1;
+        while (rdr.Read())
+        {
+            PrintContent(new List<string>(){rdr.GetInt32("actionID").ToString(), rdr.GetInt32("accountID").ToString(), rdr.GetString("op_type"), 
+                rdr.GetDouble("balance_affection").ToString(), rdr.GetDateTime("date_time").ToString(), rdr.GetString("descr")}, numbering);
+            numbering++;
+        }
+        rdr.Close();
 
+        Console.WriteLine();
+        Console.WriteLine();
+        maxLength = 15;
+    }
 }
