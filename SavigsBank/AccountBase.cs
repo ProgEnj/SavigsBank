@@ -4,12 +4,24 @@ public abstract class AccountBase
 {
     private int _ID;
     public int ID => _ID;
-    private string _ownerName; 
-    public string OwnerName => _ownerName;
+    private string _ownerName;
+    public string OwnerName
+    {
+        get => _ownerName;
+        set => _ownerName = value;
+    }
     private string _ownerSurname;
-    public string OwnerSurname => _ownerName;
-    private string _ownerMiddleName; 
-    public string OwnerMiddleName => _ownerMiddleName;
+    public string OwnerSurname
+    {
+        get => _ownerSurname;
+        set => _ownerSurname = value;
+    }
+    private string _ownerMiddleName;
+    public string OwnerMiddleName
+    {
+        get => _ownerMiddleName;
+        set => _ownerMiddleName = value;
+    }
     private double _balance;
     public double Balance
     {

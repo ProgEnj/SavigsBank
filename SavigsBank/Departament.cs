@@ -1,4 +1,6 @@
-﻿using MySql.Data.MySqlClient;
+﻿using System.Data;
+using System.Xml;
+using MySql.Data.MySqlClient;
 
 namespace SavigsBank;
 
@@ -11,6 +13,11 @@ public class Departament
     public double InterestRatePerMonth => _interestRatePerMonth;
     private MySqlConnection _DBConnection;
 
+    private char separator = '|';
+    private char horizontalSeparator = '-';
+    private int maxLength = 15;
+    string rowSeparator = "";
+    
     private Timer timer;
     
     private List<AccountBasic> accounts;
@@ -136,15 +143,10 @@ public class Departament
         }
     }
 
-    public void PrintAccounts()
+
+    public void PrintHeader(List<string> header)
     {
-        // Construct header
-        char separator = '|';
-        char horizontalSeparator = '-';
-        int maxLength = 15;
-        string[] header = new[] { "Id", "FirstName", "MiddleName", "LastName", "Balance", "Deposit" };
-        
-        string rowSeparator = "";
+        rowSeparator = "";
         for (int i = 0; i < ((maxLength + 3) * 6) + 5; i++)
         {
             rowSeparator += horizontalSeparator;
@@ -152,7 +154,7 @@ public class Departament
         
         Console.Write("  n  ");
 
-        for (int i = 0; i < header.Length; i++)
+        for (int i = 0; i < header.Count; i++)
         {
             Console.Write($" {header[i]}");
             for (int j = 0; j < (maxLength - header[i].Length); j++)
@@ -163,22 +165,42 @@ public class Departament
         }
         Console.WriteLine();
         Console.WriteLine(rowSeparator);
+    }
 
+    public void PrintContent(List<string> content, int numbering)
+    {
+        if (numbering >= 10 && numbering < 100)
+        {
+            Console.Write(separator + " " + numbering + separator);
+        }
+        else if (numbering >= 100)
+        {
+            Console.Write(separator + numbering + separator);
+        }
+        else
+        {
+            Console.Write(separator + " " + numbering + " " + separator);
+        }
+        
+        for (int i = 0; i < content.Count; i++)
+        {
+            Console.Write($" {content[i]}");
+            for (int j = 0; j < maxLength - content[i].Length; j++)
+            {
+                Console.Write(" ");
+            }
+            Console.Write(" " + separator);
+        }
+        Console.Write("\n" + rowSeparator + "\n");
+    }
+    
+    public void PrintAccounts()
+    {
+        PrintHeader(new List<string>(){ "Id", "FirstName", "MiddleName", "LastName", "Balance", "Deposit" });
         int numbering = 1;
         foreach (var item in accounts)
         {
-            Console.Write(separator + " " + numbering + " " + separator);
-            var list = item.GetAsStringList();
-            for (int i = 0; i < list.Count; i++)
-            {
-                Console.Write($" {list[i]}");
-                for (int j = 0; j < maxLength - list[i].Length; j++)
-                {
-                    Console.Write(" ");
-                }
-                Console.Write(" " + separator);
-            }
-            Console.Write("\n" + rowSeparator + "\n");
+            PrintContent(item.GetAsStringList(), numbering);
             numbering++;
         }
         Console.WriteLine();
@@ -187,49 +209,13 @@ public class Departament
     
     public void PrintDeposits()
     {
-        // Construct header
-        char separator = '|';
-        char horizontalSeparator = '-';
-        int maxLength = 15;
-        string[] header = new[] { "Id", "Interest", "Opened", "Ending"};
-        
-        string rowSeparator = "";
-        for (int i = 0; i < ((maxLength + 3) * 6) + 5; i++)
-        {
-            rowSeparator += horizontalSeparator;
-        }
-        
-        Console.Write("  n  ");
-
-        for (int i = 0; i < header.Length; i++)
-        {
-            Console.Write($" {header[i]}");
-            for (int j = 0; j < (maxLength - header[i].Length); j++)
-            {
-                Console.Write(" ");
-            }
-            Console.Write("  ");
-        }
-        Console.WriteLine();
-        Console.WriteLine(rowSeparator);
-
+        PrintHeader(new List<string>() { "Id", "Interest", "Opened", "Ending"});
         int numbering = 1;
         foreach (var item in accounts)
         {
             if (item.Deposit != null)
             {
-                Console.Write(separator + " " + numbering + " " + separator);
-                var list = item.GetAsStringList();
-                for (int i = 0; i < list.Count; i++)
-                {
-                    Console.Write($" {list[i]}");
-                    for (int j = 0; j < maxLength - list[i].Length; j++)
-                    {
-                        Console.Write(" ");
-                    }
-                    Console.Write(" " + separator);
-                }
-                Console.Write("\n" + rowSeparator + "\n");
+                PrintContent(item.Deposit.GetAsStringList(), numbering);
                 numbering++;
             }
         }
@@ -292,6 +278,30 @@ public class Departament
         this.LogAction(account.ID, "Deposit close", 0, "Closed account deposit");
     }
 
+    public void ChangeName(int accountID, string newName)
+    {
+        accounts.Find(x => x.ID == accountID).OwnerName = newName;
+        var rdr = this.DBQuery($"update accounts set first_name = \"{newName}\" " +
+                               $"where account_id = {accountID};");
+        rdr.Close();
+    }
+    
+    public void ChangeSurname(int accountID, string newSurname)
+    {
+        accounts.Find(x => x.ID == accountID).OwnerSurname = newSurname;
+        var rdr = this.DBQuery($"update accounts set last_name = \"{newSurname}\" " +
+                               $"where account_id = {accountID};");
+        rdr.Close();
+    }
+    
+    public void ChangeMidName(int accountID, string newMidName)
+    {
+        accounts.Find(x => x.ID == accountID).OwnerMiddleName = newMidName;
+        var rdr = this.DBQuery($"update accounts set middle_name = \"{newMidName}\" " +
+                               $"where account_id = {accountID};");
+        rdr.Close();
+    }
+
     public void AddFunds(int accountID, double amount)
     {
         var account = accounts.Find(x => x.ID == accountID);
@@ -334,5 +344,26 @@ public class Departament
         this.LogAction(accountIDFrom, "Transfer funds", Math.Round(roundedAmount, 2) * (-1), "Transfered funds to another account");
         this.LogAction(accountIDTo, "Transfer funds", Math.Round(roundedAmount, 2), "Transfered funds from another account");
     }
-    
+
+    public void AccountReport(int accountID, DateTime From, DateTime To)
+    {
+        maxLength = 20;
+        var rdr = this.DBQuery($"select * from actions_history where accountID = {accountID} and " +
+                               $"date(date_time) between \"{From.Date.ToString("o")}\" and \"{To.Date.ToString("o")}\";");
+        
+        PrintHeader(new List<string>(){"ActionID", "AccountID", "Type", "Balance changes", "Date", "Description"});
+        int numbering = 1;
+        while (rdr.Read())
+        {
+            PrintContent(new List<string>(){rdr.GetInt32("actionID").ToString(), rdr.GetInt32("accountID").ToString(), rdr.GetString("op_type"), 
+                rdr.GetDouble("balance_affection").ToString(), rdr.GetDateTime("date_time").ToString(), rdr.GetString("descr")}, numbering);
+            numbering++;
+        }
+        rdr.Close();
+
+        Console.WriteLine();
+        Console.WriteLine();
+        maxLength = 15;
+    }
+
 }
