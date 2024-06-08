@@ -118,7 +118,7 @@ public class Departament
             {
                 if (today.CompareTo(dep.Ending) == 0)
                 {
-                    this.CloseDeposit(item);
+                    this.CloseDeposit(item.ID);
                 }
                 else if (today.CompareTo(dep.Ending) < 0 &&
                     dep.Ending.Subtract(today).Days % 30 == 0)
@@ -237,8 +237,9 @@ public class Departament
         this.LogAction(id, "Account open", 0, "Opened a new account");
     }
     
-    public void CloseAccount(AccountBasic account)
+    public void CloseAccount(int accountID)
     {
+        var account = accounts.Find(x => x.ID == accountID);
         var rdr = this.DBQuery($"delete from accounts where account_id = {account.ID};");
         rdr.Close();
         if (account.Deposit != null)
@@ -251,7 +252,7 @@ public class Departament
         this.LogAction(account.ID, "Account close", 0, "Closed account");
     }
 
-    public void OpenDeposit(int accountID, int term, int amount)
+    public void OpenDeposit(int accountID, int term)
     {
         var rnd = new Random();
         int id = rnd.Next(10000, 99999);
@@ -268,8 +269,9 @@ public class Departament
         this.LogAction(accountID, "Deposit open", 0, "Opened a new deposit");
     }
 
-    public void CloseDeposit(AccountBasic account)
+    public void CloseDeposit(int accountID)
     {
+        var account = accounts.Find(x => x.ID == accountID);
         var rdr = this.DBQuery($"update accounts set deposit_id = null where account_id = {account.ID}; " +
                      $"delete from deposits where deposit_id = {account.Deposit.ID};");
         account.Deposit = null;
@@ -345,11 +347,11 @@ public class Departament
         this.LogAction(accountIDTo, "Transfer funds", Math.Round(roundedAmount, 2), "Transfered funds from another account");
     }
 
-    public void AccountReport(int accountID, DateTime From, DateTime To)
+    public void AccountReport(int accountID, DateOnly From, DateOnly To)
     {
         maxLength = 20;
         var rdr = this.DBQuery($"select * from actions_history where accountID = {accountID} and " +
-                               $"date(date_time) between \"{From.Date.ToString("o")}\" and \"{To.Date.ToString("o")}\";");
+                               $"date(date_time) between \"{From.ToString("o")}\" and \"{To.ToString("o")}\";");
         
         PrintHeader(new List<string>(){"ActionID", "AccountID", "Type", "Balance changes", "Date", "Description"});
         int numbering = 1;
